@@ -2,6 +2,8 @@
 
 Game balapan mobil pseudo-3D berbasis web — hindari lalu lintas, kumpulkan jarak sejauh mungkin!
 
+🔗 **Live demo:** https://turbo-racer.rakasyau.my.id
+
 ![Turbo Racer](https://github.com/rakasyau/turbo-racer/raw/main/shots/turbo-racer.png)
 
 ## Fitur
