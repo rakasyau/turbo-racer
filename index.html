@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Turbo Racer — Game Balapan Mobil</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="wrap">
+
+  <canvas id="game" width="1024" height="768"></canvas>
+
+  <!-- ===== HUD ===== -->
+  <div id="hud" class="hidden">
+    <div id="hud-top">
+      <div id="score-box">
+        <span class="label">JARAK</span>
+        <span id="score-value">0 m</span>
+      </div>
+      <div id="hearts">&#x2764;&#x2764;&#x2764;</div>
+      <div id="best-box">
+        <span class="label">TERBAIK</span>
+        <span id="best-value">0 m</span>
+      </div>
+    </div>
+    <div id="speed-box">
+      <span id="speed-value">0</span>
+      <span id="speed-unit">km/jam</span>
+    </div>
+  </div>
+
+  <!-- ===== MENU ===== -->
+  <div id="menu" class="overlay">
+    <h1 class="title">TURBO<span>RACER</span></h1>
+    <p class="tagline">Game balapan mobil pseudo-3D &mdash; hindari mobil lain, jangan nabrak!</p>
+    <div class="controls">
+      <p><kbd>&larr;</kbd><kbd>&rarr;</kbd> / <kbd>A</kbd><kbd>D</kbd> &nbsp;belok</p>
+      <p><kbd>&uarr;</kbd> / <kbd>W</kbd> &nbsp;gas &nbsp;&nbsp; <kbd>&darr;</kbd> / <kbd>S</kbd> &nbsp;rem</p>
+      <p><kbd>P</kbd> jeda &nbsp;&nbsp; <kbd>M</kbd> suara &nbsp;&nbsp; <kbd>Enter</kbd> mulai</p>
+    </div>
+    <p id="menu-best" class="best"></p>
+    <button id="start-btn">MULAI BALAP &raquo;</button>
+  </div>
+
+  <!-- ===== COUNTDOWN ===== -->
+  <div id="countdown" class="overlay hidden">
+    <div id="countdown-text">3</div>
+  </div>
+
+  <!-- ===== PAUSED ===== -->
+  <div id="paused" class="overlay hidden">
+    <h2>JEDA</h2>
+    <p>Tekan <kbd>P</kbd> atau <kbd>ESC</kbd> untuk lanjut</p>
+  </div>
+
+  <!-- ===== GAME OVER ===== -->
+  <div id="gameover" class="overlay hidden">
+    <h2 class="crash-title">KECELAKAAN!</h2>
+    <p id="go-score" class="big-score"></p>
+    <p id="go-best" class="best"></p>
+    <button id="again-btn">BALAP LAGI &raquo;</button>
+  </div>
+
+  <!-- ===== TOUCH CONTROLS (mobile) ===== -->
+  <div id="touch" class="hidden">
+    <button class="t-btn" data-k="left"  aria-label="Belok kiri">&#9664;</button>
+    <button class="t-btn" data-k="right" aria-label="Belok kanan">&#9654;</button>
+    <button class="t-btn t-wide" data-k="down" aria-label="Rem">REM</button>
+    <button class="t-btn t-wide t-gas" data-k="up" aria-label="Gas">GAS</button>
+  </div>
+
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
