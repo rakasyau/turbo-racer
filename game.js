@@ -12,8 +12,36 @@
 // ==================== CANVAS ====================
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-const W = 1024, H = 768;
+const wrapEl = document.getElementById('wrap');
+let W = 1024, H = 768;   // ukuran canvas (device pixel) — dinamis via resize()
 canvas.width = W; canvas.height = H;
+
+// Ukuran canvas adaptif: portrait = layar penuh, landscape/desktop = rasio 4:3
+function resize() {
+  const vw = window.innerWidth || document.documentElement.clientWidth;
+  const vh = window.innerHeight || document.documentElement.clientHeight;
+  let w, h;
+  if (vw >= vh) {               // landscape / desktop
+    h = vh;
+    w = h * 4 / 3;
+    if (w > vw) { w = vw; h = w * 3 / 4; }
+  } else {                      // portrait → manfaatkan layar penuh
+    w = vw; h = vh;
+  }
+  wrapEl.style.width = w + 'px';
+  wrapEl.style.height = h + 'px';
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);   // cap biar tetap lancar
+  const cw = Math.max(320, Math.round(w * dpr));
+  const ch = Math.max(240, Math.round(h * dpr));
+  if (canvas.width !== cw || canvas.height !== ch) {
+    canvas.width = cw;
+    canvas.height = ch;
+  }
+  W = canvas.width; H = canvas.height;
+}
+window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', () => setTimeout(resize, 120));
+resize();
 
 // ==================== KONSTANTA ====================
 const SEGMENT_LENGTH = 200;   // panjang 1 segmen (satuan dunia)
@@ -937,7 +965,8 @@ document.addEventListener('keyup', (e) => {
 
 // kontrol sentuh
 const touchEl = $('touch');
-const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0;
+const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0 ||
+                (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
 if (isTouch) touchEl.classList.remove('hidden');
 
 for (const btn of touchEl.querySelectorAll('.t-btn')) {
@@ -1000,5 +1029,5 @@ updateHud();
 requestAnimationFrame(frame);
 
 // hook tes (dipakai oleh test harness / konsol)
-window.__tr = { getState: () => state, getSpeed: () => speed, setState: s => state = s, gameOver };
+window.__tr = { getState: () => state, getSpeed: () => speed, setState: s => state = s, gameOver, resize };
 
