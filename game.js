@@ -477,7 +477,21 @@ function initAudio() {
   noiseBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.4, audioCtx.sampleRate);
   const d = noiseBuf.getChannelData(0);
   for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+
+  // channel suara skid / rumput (noise loop dengan filter)
+  skidSrc = audioCtx.createBufferSource();
+  skidSrc.buffer = noiseBuf;
+  skidSrc.loop = true;
+  skidFilter = audioCtx.createBiquadFilter();
+  skidFilter.type = 'bandpass'; skidFilter.frequency.value = 900; skidFilter.Q.value = 1.2;
+  skidGain = audioCtx.createGain(); skidGain.gain.value = 0;
+  skidSrc.connect(skidFilter); skidFilter.connect(skidGain); skidGain.connect(audioCtx.destination);
+  skidSrc.start();
+
+  startMusic(); // musik chiptune mulai setelah interaksi pertama
 }
+
+let skidSrc = null, skidFilter = null, skidGain = null;
 
 function setEngine(v) {
   if (!audioCtx || muted) { if (engineGain) engineGain.gain.value = 0; return; }
@@ -509,11 +523,165 @@ function playCrash() {
   beep(90, 0.35, 'sawtooth', 0.35);
 }
 
+function playBump() {
+  if (!audioCtx || muted) return;
+  beep(150, 0.1, 'triangle', 0.22);
+  beep(85, 0.14, 'sine', 0.18);
+}
+
+// kontrol suara skid (900Hz) / rumput (200Hz)
+function setSkid(v, freq) {
+  if (!audioCtx || muted) { if (skidGain) skidGain.gain.value = 0; return; }
+  if (skidFilter) skidFilter.frequency.value = freq || 900;
+  if (skidGain) skidGain.gain.value = v;
+}
+
+// ==================== MUSIK (chiptune WebAudio, tanpa file aset) ====================
+const MNOTE = n => 440 * Math.pow(2, (n - 69) / 12);  // MIDI → Hz
+const music = { bpm: 140, step: 0, nextTime: 0, timer: null, gain: null, playing: false };
+const stepDur = () => 60 / music.bpm / 4;  // not 1/16
+
+// melodi utama (A minor), 64 langkah = 4 bar
+const MELODY = [
+  76,0,76,0, 72,0,74,0, 76,0,74,0, 72,0,71,0,
+  77,0,76,0, 74,0,72,0, 74,0,72,0, 71,0,69,0,
+  72,0,72,0, 76,0,79,0, 76,0,74,0, 72,0,71,0,
+  69,0,71,0, 72,0,74,0, 76,0,74,0, 72,0,0,0
+];
+const BASS = [
+  45,0,0,0, 45,0,0,0, 45,0,0,0, 45,0,0,0,
+  41,0,0,0, 41,0,0,0, 41,0,0,0, 41,0,0,0,
+  48,0,0,0, 48,0,0,0, 48,0,0,0, 48,0,0,0,
+  43,0,0,0, 43,0,0,0, 43,0,0,0, 43,0,0,0
+];
+
+function startMusic() {
+  if (!audioCtx || music.playing || muted) return;
+  music.playing = true;
+  music.step = 0;
+  music.nextTime = audioCtx.currentTime + 0.06;
+  music.gain = audioCtx.createGain();
+  music.gain.gain.value = 0;
+  music.gain.connect(audioCtx.destination);
+  music.gain.gain.linearRampToValueAtTime(0.16, audioCtx.currentTime + 1.5); // fade in
+  music.timer = setInterval(scheduleMusic, 25);
+}
+
+function stopMusic() {
+  if (!music.playing) return;
+  music.playing = false;
+  clearInterval(music.timer);
+  music.timer = null;
+  if (music.gain && audioCtx) {
+    const t = audioCtx.currentTime;
+    music.gain.gain.cancelScheduledValues(t);
+    music.gain.gain.setValueAtTime(music.gain.gain.value, t);
+    music.gain.gain.linearRampToValueAtTime(0.0001, t + 0.8);
+  }
+}
+
+function duckMusic() {
+  if (music.gain && audioCtx) music.gain.gain.linearRampToValueAtTime(0.03, audioCtx.currentTime + 0.3);
+}
+function restoreMusic() {
+  if (music.gain && audioCtx && !muted) music.gain.gain.linearRampToValueAtTime(0.16, audioCtx.currentTime + 0.4);
+}
+
+function scheduleMusic() {
+  if (!audioCtx) return;
+  const sd = stepDur();
+  while (music.nextTime < audioCtx.currentTime + 0.12) {
+    const s = music.step % 64;
+    const m = MELODY[s], b = BASS[s];
+    if (m) playNote(MNOTE(m), music.nextTime, 0.11, 'square', 0.085, music.gain);
+    if (b) playNote(MNOTE(b), music.nextTime, 0.16, 'sawtooth', 0.07, music.gain);
+    if (s % 4 === 0)      playKick(music.nextTime);       // empat di lantai
+    if (s === 4 || s === 12) playSnare(music.nextTime);   // ketuk 2 & 4
+    if (s % 4 === 2)      playHat(music.nextTime);        // off-beat
+    music.nextTime += sd;
+    music.step++;
+  }
+}
+
+function playNote(freq, t, dur, type, gain, dest) {
+  if (!audioCtx || muted) return;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(gain, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g); g.connect(dest || audioCtx.destination);
+  o.start(t); o.stop(t + dur + 0.02);
+}
+
+function playKick(t) {
+  if (!audioCtx || muted) return;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.frequency.setValueAtTime(140, t);
+  o.frequency.exponentialRampToValueAtTime(45, t + 0.1);
+  g.gain.setValueAtTime(0.2, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(t); o.stop(t + 0.14);
+}
+
+function playSnare(t) {
+  if (!audioCtx || muted) return;
+  const src = audioCtx.createBufferSource(); src.buffer = noiseBuf;
+  const f = audioCtx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = 0.8;
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(0.13, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+  src.connect(f); f.connect(g); g.connect(audioCtx.destination);
+  src.start(t); src.stop(t + 0.11);
+}
+
+function playHat(t) {
+  if (!audioCtx || muted) return;
+  const src = audioCtx.createBufferSource(); src.buffer = noiseBuf;
+  const f = audioCtx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 7000;
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(0.05, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.035);
+  src.connect(f); f.connect(g); g.connect(audioCtx.destination);
+  src.start(t); src.stop(t + 0.045);
+}
+
+// countdown & sting game over
+function playGo() {
+  if (!audioCtx || muted) return;
+  const t = audioCtx.currentTime;
+  playNote(880, t, 0.15, 'square', 0.12);
+  playNote(1108.7, t + 0.09, 0.22, 'square', 0.1);
+  playNote(55, t, 0.3, 'sine', 0.22);
+}
+
+function playGameOver(newRecord) {
+  if (!audioCtx || muted) return;
+  const t = audioCtx.currentTime;
+  playNote(392, t, 0.22, 'sawtooth', 0.1);
+  playNote(311, t + 0.18, 0.22, 'sawtooth', 0.1);
+  playNote(233, t + 0.36, 0.55, 'sawtooth', 0.1);
+  if (newRecord) {
+    playNote(523.25, t + 1.0, 0.12, 'square', 0.09);
+    playNote(659.25, t + 1.12, 0.12, 'square', 0.09);
+    playNote(783.99, t + 1.24, 0.3, 'square', 0.09);
+  }
+}
+
 function toggleMute() {
   muted = !muted;
   localStorage.setItem('tr_muted', muted ? '1' : '0');
   if (!audioCtx) return;
-  if (muted) engineGain.gain.value = 0;
+  if (muted) {
+    if (engineGain) engineGain.gain.value = 0;
+    if (skidGain) skidGain.gain.value = 0;
+    if (music.gain) music.gain.gain.value = 0;
+  } else {
+    if (!music.playing) startMusic();
+    else if (music.gain) music.gain.gain.value = 0.16;
+  }
 }
 
 // ==================== UPDATE ====================
@@ -528,13 +696,14 @@ function update(dt) {
   if (state === 'countdown') {
     countdownT -= dt;
     const i = Math.ceil(countdownT);
-    if (i !== lastBeepInt && i > 0) { beep(440, 0.09); lastBeepInt = i; }
-    if (countdownT <= 0) { beep(880, 0.3); state = 'racing'; }
+    if (i !== lastBeepInt && i > 0) { beep([440, 554.37, 659.25][3 - i], 0.09); lastBeepInt = i; }
+    if (countdownT <= 0) { playGo(); state = 'racing'; }
     setEngine(0);
+    setSkid(0, 900);
     return; // mobil pemain masih diam
   }
 
-  if (state !== 'racing') { setEngine(0); return; }
+  if (state !== 'racing') { setEngine(0); setSkid(0, 900); return; }
 
   const speedPercent = speed / maxSpeed;
   const dx = dt * 2 * speedPercent; // dari kiri ke kanan (±1) dalam 1 detik di kecepatan penuh
@@ -578,6 +747,7 @@ function update(dt) {
           if (hearts <= 0) { gameOver(); break; }
         } else {
           speed = car.speed * (car.speed / speed); // menabrak ringan → terdorong balik
+          playBump();
         }
         position = Util.increase(car.z, -playerZ, trackLength);
         break;
@@ -601,6 +771,17 @@ function update(dt) {
 
   playerX = Util.limit(playerX, -3, 3);
   speed   = Util.limit(speed, 0, maxSpeed);
+
+  // ----- suara skid & rumput -----
+  const onGrass = (playerX < -1 || playerX > 1);
+  const steering = (keys.left || keys.right) ? 1 : 0;
+  if (onGrass && speed > maxSpeed * 0.15) {
+    setSkid(0.1 + 0.04 * speedPercent, 190);       // gemuruh di rumput
+  } else if (steering && speed > maxSpeed * 0.35) {
+    setSkid(0.05 + 0.08 * speedPercent, 950);      // ban selip saat belok kencang
+  } else {
+    setSkid(0, 900);
+  }
 
   setEngine(speed / maxSpeed);
   updateHud();
@@ -676,11 +857,15 @@ function fmtDist(m) {
 function gameOver() {
   state = 'gameover';
   setEngine(0);
+  setSkid(0, 900);
+  duckMusic();
   const score = Math.floor(totalDist);
-  if (score > best) {
+  const newRecord = score > best;
+  if (newRecord) {
     best = score;
     localStorage.setItem('tr_best', String(best));
   }
+  playGameOver(newRecord);
   $('go-score').textContent = 'Skor: ' + fmtDist(score);
   $('go-best').textContent  = 'Rekor: ' + fmtDist(best);
   show($('gameover'));
@@ -931,10 +1116,13 @@ function togglePause() {
   if (state === 'racing') {
     state = 'paused';
     setEngine(0);
+    setSkid(0, 900);
+    duckMusic();
     show($('paused'));
   } else if (state === 'paused') {
     state = 'racing';
     hide($('paused'));
+    restoreMusic();
   }
 }
 
@@ -1029,5 +1217,10 @@ updateHud();
 requestAnimationFrame(frame);
 
 // hook tes (dipakai oleh test harness / konsol)
-window.__tr = { getState: () => state, getSpeed: () => speed, setState: s => state = s, gameOver, resize };
+window.__tr = {
+  getState: () => state, getSpeed: () => speed, setState: s => state = s,
+  gameOver, resize, toggleMute,
+  getMusic: () => ({ playing: music.playing, step: music.step, gain: music.gain ? +music.gain.gain.value.toFixed(3) : 0 }),
+  getSkid: () => skidGain ? +skidGain.gain.value.toFixed(3) : 0
+};
 
