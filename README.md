@@ -8,11 +8,12 @@ Game balapan mobil pseudo-3D berbasis web — hindari lalu lintas, kumpulkan jar
 
 ## Fitur
 - 🛣️ Jalan pseudo-3D dengan tikungan & bukit (perspektif ala OutRun)
-- 🚗 Mobil AI & truk yang menghindar, 4 lajur
+- 🚗 Mobil AI & truk dengan sprite prosedural yang lebih detail: body bergradasi, kaca reflektif, lampu, ban, dan bayangan
 - ❤️ Sistem 3 nyawa — nabrak keras = kehilangan nyawa + efek layar merah
 - 📈 Skor jarak tempuh + rekor tersimpan di `localStorage`
+- ⚡ Turbo taktis — tahan `Shift` setelah mobil melaju untuk boost sampai 390 km/jam; meter terisi ulang saat berkendara normal
 - 🔊 Suara mesin WebAudio, beep countdown, suara tabrakan
-- 📱 Kontrol sentuh untuk HP + HUD speed/jarak/nyawa
+- 📱 Kontrol sentuh untuk HP, termasuk tombol TURBO, plus HUD speed/jarak/nyawa/meter turbo
 - 🖼️ 100% prosedural — tanpa file gambar eksternal
 
 ## Cara main
@@ -28,6 +29,7 @@ python -m http.server 8080   # lalu buka http://localhost:8080
 | Belok | `←` `→` / `A` `D` | Tombol ◀ ▶ |
 | Gas | `↑` / `W` | Tombol GAS |
 | Rem | `↓` / `S` | Tombol REM |
+| Turbo | Tahan `Shift` saat melaju | Tombol TURBO |
 | Jeda | `P` / `Esc` | — |
 | Suara | `M` | — |
 | Mulai | `Enter` | Tombol MULAI BALAP |
@@ -36,7 +38,7 @@ python -m http.server 8080   # lalu buka http://localhost:8080
 - Satu halaman: `index.html` + `style.css` + `game.js` (tanpa dependency)
 - Rendering canvas 1024×768, fixed timestep 60 FPS
 - Algoritma road/perspektif diadaptasi dari [Javascript Racer](https://codeincomplete.com/games/racer/) karya Jake Gordon (MIT License)
-- Sprite & background digambar prosedural via Canvas API
+- Sprite kendaraan, lingkungan, dan background digambar prosedural via Canvas API
 
 ## Lisensi
 MIT
