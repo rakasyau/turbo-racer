@@ -1067,9 +1067,11 @@ function render() {
     if (segment === playerSegment) {
       const playerScale = cameraDepth / playerZ;
       const playerCamY = Util.interpolate(playerSegment.p1.camera.y, playerSegment.p2.camera.y, playerPercent);
-      const steer = keys.left ? -1 : keys.right ? 1 : 0;
       const bounce = (1.5 * Math.random() * (speed / maxSpeed)) * Util.randomChoice([-1, 1]);
-      drawSpriteWorld(S.PLAYER, playerScale, W/2, H/2 - playerScale * playerCamY * H/2 + bounce, -0.5, -1, H);
+      // Pada layar portrait, angkat mobil agar tidak tertutup kluster kontrol sentuh di bawah.
+      const portraitLift = H > W ? H * 0.16 : 0;
+      const playerScreenY = H/2 - playerScale * playerCamY * H/2 + bounce - portraitLift;
+      drawSpriteWorld(S.PLAYER, playerScale, W/2, playerScreenY, -0.5, -1, H);
     }
   }
 
