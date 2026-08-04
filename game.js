@@ -167,60 +167,101 @@ function roundRectPath(x, y, w, h, r) {
 // gambar mobil (tampak belakang) di dalam kotak (x,y,w,h)
 function drawCar(x, y, w, h, color, isPlayer) {
   if (w < 2 || h < 2) return;
-  // roda
-  ctx.fillStyle = '#1a1a1a';
-  ctx.fillRect(x + w*0.02, y + h*0.66, w*0.16, h*0.3);
-  ctx.fillRect(x + w*0.82, y + h*0.66, w*0.16, h*0.3);
-  // body
-  roundRectPath(x + w*0.06, y + h*0.12, w*0.88, h*0.72, w*0.18);
-  ctx.fillStyle = color;
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-  ctx.lineWidth = Math.max(1, w*0.03);
-  ctx.stroke();
-  // kaca belakang
-  ctx.fillStyle = 'rgba(15,25,45,0.9)';
-  roundRectPath(x + w*0.22, y + h*0.24, w*0.56, h*0.34, w*0.1);
-  ctx.fill();
-  // bumper
-  ctx.fillStyle = 'rgba(0,0,0,0.25)';
-  ctx.fillRect(x + w*0.1, y + h*0.78, w*0.8, h*0.1);
-  // lampu rem
-  ctx.fillStyle = isPlayer ? '#ff8a65' : '#ff1744';
-  ctx.fillRect(x + w*0.14, y + h*0.62, w*0.2, h*0.13);
-  ctx.fillRect(x + w*0.66, y + h*0.62, w*0.2, h*0.13);
-  if (isPlayer) {
-    // spoiler
-    ctx.fillStyle = '#263238';
-    ctx.fillRect(x + w*0.08, y + h*0.02, w*0.84, h*0.1);
-    ctx.fillRect(x + w*0.05, y + h*0.08, w*0.1, h*0.18);
-    ctx.fillRect(x + w*0.85, y + h*0.08, w*0.1, h*0.18);
+  ctx.save();
+
+  // bayangan membuat mobil terasa menempel di aspal
+  ctx.fillStyle = 'rgba(0,0,0,0.26)';
+  ctx.beginPath();
+  ctx.ellipse(x + w*0.5, y + h*0.91, w*0.49, h*0.11, 0, 0, Math.PI*2); ctx.fill();
+
+  // ban, velg, dan lengkungan roda
+  for (const wheelX of [0.04, 0.80]) {
+    roundRectPath(x + w*wheelX, y + h*0.58, w*0.17, h*0.32, w*0.045);
+    ctx.fillStyle = '#10141b'; ctx.fill();
+    ctx.fillStyle = '#697887';
+    ctx.fillRect(x + w*(wheelX + 0.045), y + h*0.69, w*0.08, h*0.11);
   }
+
+  // siluet fastback dengan body bergradasi
+  ctx.beginPath();
+  ctx.moveTo(x + w*0.14, y + h*0.78);
+  ctx.lineTo(x + w*0.18, y + h*0.36);
+  ctx.quadraticCurveTo(x + w*0.22, y + h*0.12, x + w*0.36, y + h*0.08);
+  ctx.lineTo(x + w*0.64, y + h*0.08);
+  ctx.quadraticCurveTo(x + w*0.78, y + h*0.12, x + w*0.82, y + h*0.36);
+  ctx.lineTo(x + w*0.87, y + h*0.78);
+  ctx.quadraticCurveTo(x + w*0.83, y + h*0.88, x + w*0.74, y + h*0.89);
+  ctx.lineTo(x + w*0.26, y + h*0.89);
+  ctx.quadraticCurveTo(x + w*0.17, y + h*0.88, x + w*0.14, y + h*0.78);
+  ctx.closePath();
+  const body = ctx.createLinearGradient(x, y, x, y + h);
+  body.addColorStop(0, '#ffffff'); body.addColorStop(0.05, color);
+  body.addColorStop(0.65, color); body.addColorStop(1, 'rgba(0,0,0,0.48)');
+  ctx.fillStyle = body; ctx.fill();
+  ctx.strokeStyle = 'rgba(4,12,22,0.72)'; ctx.lineWidth = Math.max(1, w*0.026); ctx.stroke();
+
+  // kaca belakang + pantulan langit
+  ctx.beginPath();
+  ctx.moveTo(x + w*0.28, y + h*0.20); ctx.lineTo(x + w*0.72, y + h*0.20);
+  ctx.lineTo(x + w*0.78, y + h*0.49); ctx.lineTo(x + w*0.22, y + h*0.49); ctx.closePath();
+  const glass = ctx.createLinearGradient(x, y + h*0.18, x, y + h*0.52);
+  glass.addColorStop(0, '#8bd9f4'); glass.addColorStop(0.28, '#31546e'); glass.addColorStop(1, '#101b29');
+  ctx.fillStyle = glass; ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.28)';
+  ctx.fillRect(x + w*0.31, y + h*0.24, w*0.31, h*0.045);
+
+  // panel belakang dan stoplamp modern
+  ctx.fillStyle = 'rgba(11,19,30,0.55)';
+  roundRectPath(x + w*0.16, y + h*0.56, w*0.68, h*0.18, w*0.045); ctx.fill();
+  const lamp = isPlayer ? '#ff9b58' : '#ff314f';
+  ctx.fillStyle = lamp;
+  roundRectPath(x + w*0.20, y + h*0.60, w*0.20, h*0.075, w*0.02); ctx.fill();
+  roundRectPath(x + w*0.60, y + h*0.60, w*0.20, h*0.075, w*0.02); ctx.fill();
+  ctx.fillStyle = 'rgba(255,235,220,0.75)';
+  ctx.fillRect(x + w*0.47, y + h*0.61, w*0.06, h*0.055);
+
+  // diffuser, plat nomor, dan knalpot
+  ctx.fillStyle = '#151b23';
+  roundRectPath(x + w*0.20, y + h*0.78, w*0.60, h*0.10, w*0.03); ctx.fill();
+  ctx.fillStyle = '#d8e4e9'; ctx.fillRect(x + w*0.42, y + h*0.76, w*0.16, h*0.055);
+  ctx.fillStyle = '#06090d';
+  ctx.beginPath(); ctx.arc(x + w*0.28, y + h*0.85, w*0.035, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x + w*0.72, y + h*0.85, w*0.035, 0, Math.PI*2); ctx.fill();
+  if (isPlayer) {
+    // spoiler dan strip balap membedakan mobil pemain
+    ctx.fillStyle = '#132330';
+    roundRectPath(x + w*0.08, y + h*0.015, w*0.84, h*0.075, w*0.025); ctx.fill();
+    ctx.fillRect(x + w*0.11, y + h*0.07, w*0.055, h*0.15);
+    ctx.fillRect(x + w*0.835, y + h*0.07, w*0.055, h*0.15);
+    ctx.fillStyle = 'rgba(255,224,89,0.9)'; ctx.fillRect(x + w*0.475, y + h*0.11, w*0.05, h*0.42);
+  }
+  ctx.restore();
 }
 
 function drawTruck(x, y, w, h, color) {
   if (w < 2 || h < 2) return;
-  ctx.fillStyle = '#1a1a1a';
-  ctx.fillRect(x + w*0.02, y + h*0.85, w*0.14, h*0.14);
-  ctx.fillRect(x + w*0.84, y + h*0.85, w*0.14, h*0.14);
-  // kabin
-  roundRectPath(x + w*0.1, y + h*0.55, w*0.8, h*0.32, w*0.12);
-  ctx.fillStyle = color;
-  ctx.fill();
-  ctx.fillStyle = 'rgba(15,25,45,0.9)';
-  roundRectPath(x + w*0.24, y + h*0.6, w*0.52, h*0.2, w*0.06);
-  ctx.fill();
-  // kontainer
-  roundRectPath(x + w*0.06, y + h*0.02, w*0.88, h*0.56, w*0.06);
-  ctx.fillStyle = color;
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(0,0,0,0.4)';
-  ctx.lineWidth = Math.max(1, w*0.04);
-  ctx.stroke();
-  // garis kontainer
-  ctx.fillStyle = 'rgba(0,0,0,0.25)';
-  ctx.fillRect(x + w*0.06, y + h*0.3, w*0.88, h*0.03);
-  ctx.fillRect(x + w*0.06, y + h*0.42, w*0.88, h*0.03);
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath(); ctx.ellipse(x+w*0.5, y+h*0.94, w*0.5, h*0.07, 0, 0, Math.PI*2); ctx.fill();
+  // roda ganda dan bumper bawah
+  ctx.fillStyle = '#11161c';
+  for (const wheelX of [0.04, 0.18, 0.68, 0.82]) roundRectPath(x+w*wheelX, y+h*0.80, w*0.14, h*0.17, w*0.03), ctx.fill();
+  // kontainer berpanel
+  roundRectPath(x+w*0.07, y+h*0.04, w*0.86, h*0.53, w*0.045);
+  const trailer = ctx.createLinearGradient(x, y, x, y+h*0.62);
+  trailer.addColorStop(0, '#d7f7ff'); trailer.addColorStop(0.05, color); trailer.addColorStop(1, 'rgba(0,0,0,.38)');
+  ctx.fillStyle = trailer; ctx.fill();
+  ctx.strokeStyle = 'rgba(5,15,24,.7)'; ctx.lineWidth = Math.max(1, w*0.025); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,.22)'; ctx.lineWidth = Math.max(1, w*0.012);
+  for (let row = 0; row < 3; row++) { ctx.beginPath(); ctx.moveTo(x+w*.12, y+h*(.18+row*.12)); ctx.lineTo(x+w*.88, y+h*(.18+row*.12)); ctx.stroke(); }
+  // kabin dan jendela
+  roundRectPath(x+w*0.12, y+h*0.54, w*0.76, h*0.31, w*0.09); ctx.fillStyle = color; ctx.fill();
+  ctx.fillStyle = '#203f55'; roundRectPath(x+w*0.24, y+h*0.60, w*0.52, h*0.17, w*0.04); ctx.fill();
+  ctx.fillStyle = 'rgba(190,240,255,.35)'; ctx.fillRect(x+w*.29, y+h*.62, w*.42, h*.035);
+  // lampu, grill, bumper
+  ctx.fillStyle = '#ff3c48'; ctx.fillRect(x+w*.17, y+h*.76, w*.13, h*.06); ctx.fillRect(x+w*.70, y+h*.76, w*.13, h*.06);
+  ctx.fillStyle = '#151b22'; ctx.fillRect(x+w*.18, y+h*.84, w*.64, h*.07);
+  ctx.restore();
 }
 
 function drawTree(x, y, w, h) {
