@@ -79,13 +79,15 @@ let hearts    = 3;
 let invuln    = 0;
 let crashFlash = 0;
 let shake     = 0;
+let turboFuel = 1;
+let turboActive = false;
 let state     = 'menu';        // menu | countdown | racing | paused | gameover
 let countdownT = 3;
 let lastBeepInt = 3;
 let best = parseInt(localStorage.getItem('tr_best') || '0', 10) || 0;
 let muted = localStorage.getItem('tr_muted') === '1';
 
-const keys = { left:false, right:false, up:false, down:false };
+const keys = { left:false, right:false, up:false, down:false, turbo:false };
 
 const $ = id => document.getElementById(id);
 const hud = {};
@@ -694,6 +696,7 @@ function update(dt) {
   }
 
   if (state === 'countdown') {
+    turboActive = false;
     countdownT -= dt;
     const i = Math.ceil(countdownT);
     if (i !== lastBeepInt && i > 0) { beep([440, 554.37, 659.25][3 - i], 0.09); lastBeepInt = i; }
@@ -703,7 +706,7 @@ function update(dt) {
     return; // mobil pemain masih diam
   }
 
-  if (state !== 'racing') { setEngine(0); setSkid(0, 900); return; }
+  if (state !== 'racing') { turboActive = false; setEngine(0); setSkid(0, 900); return; }
 
   const speedPercent = speed / maxSpeed;
   const dx = dt * 2 * speedPercent; // dari kiri ke kanan (±1) dalam 1 detik di kecepatan penuh
@@ -713,9 +716,16 @@ function update(dt) {
   if (keys.right) playerX += dx;
   playerX -= dx * speedPercent * playerSegment.curve * CENTRIFUGAL; // efek gaya sentrifugal di tikungan
 
-  if (keys.up)   speed = Util.accelerate(speed, accel, dt);
+  turboActive = keys.turbo && turboFuel > 0.02 && speed > maxSpeed * 0.25;
+  if (turboActive) {
+    turboFuel = Math.max(0, turboFuel - dt * 0.22);
+    speed = Util.accelerate(speed, accel * 1.55, dt);
+  } else if (keys.up) speed = Util.accelerate(speed, accel, dt);
   else if (keys.down) speed = Util.accelerate(speed, braking, dt);
   else speed = Util.accelerate(speed, decel, dt);
+
+  // Isi ulang turbo saat berkendara normal; dorong pemain untuk memilih momen menyalip.
+  if (!turboActive) turboFuel = Math.min(1, turboFuel + dt * (speed < maxSpeed * 0.55 ? 0.12 : 0.045));
 
   // ----- keluar jalur (rumput) -----
   if (playerX < -1 || playerX > 1) {
@@ -770,7 +780,7 @@ function update(dt) {
   if (shake > 0) shake = Math.max(0, shake - dt * 2);
 
   playerX = Util.limit(playerX, -3, 3);
-  speed   = Util.limit(speed, 0, maxSpeed);
+  speed   = Util.limit(speed, 0, turboActive ? maxSpeed * 1.22 : maxSpeed);
 
   // ----- suara skid & rumput -----
   const onGrass = (playerX < -1 || playerX > 1);
@@ -856,6 +866,7 @@ function fmtDist(m) {
 
 function gameOver() {
   state = 'gameover';
+  turboActive = false;
   setEngine(0);
   setSkid(0, 900);
   duckMusic();
@@ -889,6 +900,12 @@ function updateHud() {
     hudCache.hearts = hearts;
     $('hearts').textContent = '❤'.repeat(hearts) + '🖤'.repeat(3 - hearts);
   }
+  const turboPct = Math.round(turboFuel * 100);
+  if (hudCache.turbo !== turboPct) {
+    hudCache.turbo = turboPct;
+    $('turbo-fill').style.width = turboPct + '%';
+  }
+  $('turbo-box').classList.toggle('active', turboActive);
 }
 
 // ==================== RENDER ====================
@@ -949,6 +966,7 @@ function render() {
   }
   ctx.clearRect(0, 0, W, H);
   drawBackground();
+  if (turboActive) drawTurboStreaks();
 
   let maxy = H;
   let x = 0;
@@ -1021,6 +1039,22 @@ function render() {
     ctx.fillStyle = 'rgba(255,40,40,' + (crashFlash * 0.35).toFixed(3) + ')';
     ctx.fillRect(0, 0, W, H);
   }
+}
+
+function drawTurboStreaks() {
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+  ctx.strokeStyle = 'rgba(202, 246, 255, 0.44)';
+  ctx.lineWidth = Math.max(1, W * 0.002);
+  for (let i = 0; i < 18; i++) {
+    const x = (i * 83 + position * 0.07) % (W + 140) - 70;
+    const y = H * 0.13 + ((i * 47 + position * 0.03) % (H * 0.58));
+    ctx.beginPath();
+    ctx.moveTo(W / 2 + (x - W / 2) * 0.32, H * 0.47 + (y - H * 0.47) * 0.25);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 function drawSegment(segment) {
@@ -1097,6 +1131,8 @@ function resetRace() {
   invuln = 0;
   crashFlash = 0;
   shake = 0;
+  turboFuel = 1;
+  turboActive = false;
   countdownT = 3;
   lastBeepInt = 3;
   hide($('menu')); hide($('gameover')); hide($('paused'));
@@ -1142,11 +1178,13 @@ document.addEventListener('keydown', (e) => {
     if (state === 'racing' || state === 'paused') { e.preventDefault(); togglePause(); return; }
   }
   if (e.key === 'm' || e.key === 'M') { toggleMute(); return; }
+  if (e.key === 'Shift') { e.preventDefault(); keys.turbo = true; initAudio(); return; }
   const k = keyMap[e.key];
   if (k) { e.preventDefault(); keys[k] = true; initAudio(); }
 });
 
 document.addEventListener('keyup', (e) => {
+  if (e.key === 'Shift') { keys.turbo = false; return; }
   const k = keyMap[e.key];
   if (k) { keys[k] = false; }
 });
@@ -1220,7 +1258,7 @@ requestAnimationFrame(frame);
 window.__tr = {
   getState: () => state, getSpeed: () => speed, setState: s => state = s,
   gameOver, resize, toggleMute,
+  getTurbo: () => ({ fuel: +turboFuel.toFixed(3), active: turboActive }),
   getMusic: () => ({ playing: music.playing, step: music.step, gain: music.gain ? +music.gain.gain.value.toFixed(3) : 0 }),
   getSkid: () => skidGain ? +skidGain.gain.value.toFixed(3) : 0
 };
-

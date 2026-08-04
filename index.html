@@ -26,10 +26,15 @@
         <span id="best-value">0 m</span>
       </div>
     </div>
-    <div id="speed-box">
-      <span id="speed-value">0</span>
-      <span id="speed-unit">km/jam</span>
-    </div>
+      <div id="speed-box">
+        <span id="speed-value">0</span>
+        <span id="speed-unit">km/jam</span>
+      </div>
+      <div id="turbo-box" aria-label="Meter turbo">
+        <span class="turbo-label">TURBO</span>
+        <span class="turbo-track"><i id="turbo-fill"></i></span>
+        <span id="turbo-key">SHIFT</span>
+      </div>
   </div>
 
   <!-- ===== MENU ===== -->
@@ -39,7 +44,7 @@
     <div class="controls">
       <p><kbd>&larr;</kbd><kbd>&rarr;</kbd> / <kbd>A</kbd><kbd>D</kbd> &nbsp;belok</p>
       <p><kbd>&uarr;</kbd> / <kbd>W</kbd> &nbsp;gas &nbsp;&nbsp; <kbd>&darr;</kbd> / <kbd>S</kbd> &nbsp;rem</p>
-      <p><kbd>P</kbd> jeda &nbsp;&nbsp; <kbd>M</kbd> suara &nbsp;&nbsp; <kbd>Enter</kbd> mulai</p>
+      <p><kbd>Shift</kbd> turbo &nbsp;&nbsp; <kbd>P</kbd> jeda &nbsp;&nbsp; <kbd>M</kbd> suara</p>
     </div>
     <p id="menu-best" class="best"></p>
     <button id="start-btn">MULAI BALAP &raquo;</button>
@@ -70,6 +75,7 @@
     <button class="t-btn t-right" data-k="right" aria-label="Belok kanan">&#9654;</button>
     <button class="t-btn t-rem"   data-k="down"  aria-label="Rem">REM</button>
     <button class="t-btn t-gas"   data-k="up"    aria-label="Gas">GAS</button>
+    <button class="t-btn t-turbo" data-k="turbo" aria-label="Aktifkan turbo">TURBO</button>
   </div>
 
 </div>

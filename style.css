@@ -111,6 +111,29 @@ canvas#game {
   margin-top: 2px;
 }
 
+#turbo-box {
+  position: absolute;
+  left: 22px;
+  bottom: 22px;
+  display: grid;
+  grid-template-columns: auto 128px auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(5, 10, 25, 0.55);
+  border: 1px solid rgba(124, 235, 255, 0.28);
+  border-radius: 9px;
+  backdrop-filter: blur(3px);
+}
+
+.turbo-label { font-size: 10px; font-weight: 900; letter-spacing: 1.4px; color: #aeeeff; }
+.turbo-track { width: 128px; height: 8px; overflow: hidden; border-radius: 99px; background: rgba(145, 205, 255, 0.18); box-shadow: inset 0 1px 3px rgba(0,0,0,.45); }
+#turbo-fill { display: block; width: 100%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #17bfff, #bdffff); box-shadow: 0 0 10px #42d9ff; transition: width .12s linear, background .15s ease; }
+#turbo-key { font-size: 9px; font-weight: 800; letter-spacing: 1px; color: #7dc7e6; }
+#turbo-box.active { border-color: rgba(255, 212, 79, .95); box-shadow: 0 0 18px rgba(255, 188, 35, .48); }
+#turbo-box.active #turbo-fill { background: linear-gradient(90deg, #ff8d00, #fff08a); box-shadow: 0 0 13px #ffc400; }
+#turbo-box.active .turbo-label { color: #ffe36d; }
+
 /* ============ OVERLAY ============ */
 .overlay {
   position: absolute;
@@ -278,6 +301,16 @@ button:active { transform: translateY(3px);  box-shadow: 0 0 14px rgba(34,184,25
   font-size: clamp(13px, 4.5cqw, 20px);
 }
 
+.t-turbo {
+  width: clamp(56px, 14cqw, 88px);
+  height: clamp(56px, 14cqw, 88px);
+  right: 3%;
+  bottom: calc(3% + 25cqw + 12px + env(safe-area-inset-bottom, 0px));
+  font-size: clamp(10px, 3.5cqw, 15px);
+  color: #ffe26b;
+  border-color: rgba(255, 209, 62, .5);
+}
+
 /* ============ RESPONSIF (portrait / layar kecil) ============ */
 @media (orientation: portrait) {
   /* speed pindah ke atas-tengah biar nggak ketutup tombol GAS */
@@ -295,6 +328,9 @@ button:active { transform: translateY(3px);  box-shadow: 0 0 14px rgba(34,184,25
   #hud-top { padding: 10px 12px; }
   #score-value, #best-value { font-size: 15px; }
   #hearts { font-size: 20px; margin-top: 8px; }
+  #turbo-box { left: 12px; bottom: 12px; grid-template-columns: auto 78px; gap: 6px; }
+  .turbo-track { width: 78px; }
+  #turbo-key { display: none; }
 
   .title { font-size: clamp(30px, 11cqw, 64px); letter-spacing: 3px; }
   .tagline { font-size: 13px; max-width: 90%; }
